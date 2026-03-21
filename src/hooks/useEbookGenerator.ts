@@ -19,23 +19,18 @@ export function useEbookGenerator() {
     setState("loading");
 
     try {
-      const { data, error: fnError } = await supabase.functions.invoke(
+      const { data: responseData, error: fnError } = await supabase.functions.invoke(
         "generate-ebook",
         { body: { chatInput: kw } }
       );
 
       if (fnError) throw new Error(fnError.message);
-      const res = { ok: true, json: async () => data } as any;
 
-      if (!res.ok) throw new Error(`Server error: ${res.status}`);
-
-      const data = await res.json();
-
-      if (!data.ebookUrl || !data.bonusUrl) {
+      if (!responseData.ebookUrl || !responseData.bonusUrl) {
         throw new Error("Invalid response from server.");
       }
 
-      setResult(data);
+      setResult(responseData);
       setState("results");
     } catch (err: any) {
       setError(err.message || "Something went wrong. Please try again.");
