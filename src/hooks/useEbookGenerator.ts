@@ -14,22 +14,18 @@ export function useEbookGenerator() {
   const [error, setError] = useState("");
 
   const generate = async (kw: string) => {
-    const webhookUrl = import.meta.env.VITE_WEBHOOK_URL;
-    if (!webhookUrl) {
-      setError("Webhook URL not configured. Please set VITE_WEBHOOK_URL.");
-      setState("error");
-      return;
-    }
-
     setKeyword(kw);
     setState("loading");
 
     try {
-      const res = await fetch(webhookUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ keyword: kw }),
-      });
+      const res = await fetch(
+        "https://aiaa1.datasciencemasterminds.com/webhook/1a4c03a8-4fd2-4b05-aa2b-6d7fd41e00f2/chat",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ chatInput: kw }),
+        }
+      );
 
       if (!res.ok) throw new Error(`Server error: ${res.status}`);
 
