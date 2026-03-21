@@ -19,14 +19,13 @@ export function useEbookGenerator() {
     setState("loading");
 
     try {
-      const res = await fetch(
-        "https://aiaa1.datasciencemasterminds.com/webhook/1a4c03a8-4fd2-4b05-aa2b-6d7fd41e00f2/chat",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ chatInput: kw }),
-        }
+      const { data, error: fnError } = await supabase.functions.invoke(
+        "generate-ebook",
+        { body: { chatInput: kw } }
       );
+
+      if (fnError) throw new Error(fnError.message);
+      const res = { ok: true, json: async () => data } as any;
 
       if (!res.ok) throw new Error(`Server error: ${res.status}`);
 
