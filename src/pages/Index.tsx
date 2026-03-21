@@ -1,16 +1,31 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import HeroSection from "@/components/HeroSection";
+import LoadingPage from "@/components/LoadingPage";
+import ResultsPage from "@/components/ResultsPage";
+import ErrorPage from "@/components/ErrorPage";
+import { useEbookGenerator } from "@/hooks/useEbookGenerator";
 
-// IMPORTANT: Fully REPLACE this with your own code
-const PlaceholderIndex = () => {
-  // PLACEHOLDER: Replace this entire return statement with the user's app.
-  // The inline background color is intentionally not part of the design system.
+const Index = () => {
+  const { state, result, error, generate, reset } = useEbookGenerator();
+
   return (
-    <div className="flex min-h-screen items-center justify-center" style={{ backgroundColor: '#fcfbf8' }}>
-      <img data-lovable-blank-page-placeholder="REMOVE_THIS" src="/placeholder.svg" alt="Your app will live here!" />
+    <div className="min-h-screen bg-background">
+      {state === "landing" && <HeroSection onGenerate={generate} />}
+      {state === "loading" && <LoadingPage />}
+      {state === "results" && result && (
+        <ResultsPage
+          ebookUrl={result.ebookUrl}
+          bonusUrl={result.bonusUrl}
+          onReset={reset}
+        />
+      )}
+      {state === "error" && <ErrorPage message={error} onRetry={reset} />}
+
+      {/* Footer */}
+      <footer className="fixed bottom-0 inset-x-0 py-4 text-center text-xs text-muted-foreground border-t border-border bg-background/80 backdrop-blur-sm">
+        DropBook AI · Turn keywords into ebooks
+      </footer>
     </div>
   );
 };
-
-const Index = PlaceholderIndex;
 
 export default Index;
