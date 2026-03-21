@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 type AppState = "landing" | "loading" | "results" | "error";
 
@@ -18,24 +19,18 @@ export function useEbookGenerator() {
     setState("loading");
 
     try {
-      const res = await fetch(
-        "https://aiaa1.datasciencemasterminds.com/webhook/1a4c03a8-4fd2-4b05-aa2b-6d7fd41e00f2/chat",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ chatInput: kw }),
-        }
+      const { data: responseData, error: fnError } = await supabase.functions.invoke(
+        "generate-ebook",
+        { body: { chatInput: kw } }
       );
 
-      if (!res.ok) throw new Error(`Server error: ${res.status}`);
+      if (fnError) throw new Error(fnError.message);
 
-      const data = await res.json();
-
-      if (!data.ebookUrl || !data.bonusUrl) {
+      if (!responseData.ebookUrl || !responseData.bonusUrl) {
         throw new Error("Invalid response from server.");
       }
 
-      setResult(data);
+      setResult(responseData);
       setState("results");
     } catch (err: any) {
       setError(err.message || "Something went wrong. Please try again.");
