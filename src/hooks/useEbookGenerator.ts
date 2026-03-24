@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 
 type AppState = "landing" | "loading" | "results" | "error";
 
@@ -7,6 +6,11 @@ interface ResultData {
   ebookUrl: string;
   bonusUrl: string;
 }
+
+const WEBHOOK_URL =
+  "https://aiaa1.datasciencemasterminds.com/webhook/1a4c03a8-4fd2-4b05-aa2b-6d7fd41e00f2/chat";
+
+const TIMEOUT_MS = 120000;
 
 export function useEbookGenerator() {
   const [state, setState] = useState<AppState>("landing");
@@ -19,21 +23,37 @@ export function useEbookGenerator() {
     setState("loading");
 
     try {
-      const { data: responseData, error: fnError } = await supabase.functions.invoke(
-        "generate-ebook",
-        { body: { chatInput: kw } }
-      );
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
-      if (fnError) throw new Error(fnError.message);
+      const response = await fetch(WEBHOOK_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chatInput: kw }),
+        signal: controller.signal,
+      });
 
-      if (!responseData.ebookUrl || !responseData.bonusUrl) {
-        throw new Error("Invalid response from server.");
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`Server error (${response.status}): ${text}`);
       }
 
-      setResult(responseData);
+      const data = await response.json();
+
+      if (!data.ebookUrl || !data.bonusUrl) {
+        throw new Error("Invalid response: missing download URLs.");
+      }
+
+      setResult({ ebookUrl: data.ebookUrl, bonusUrl: data.bonusUrl });
       setState("results");
     } catch (err: any) {
-      setError(err.message || "Something went wrong. Please try again.");
+      if (err.name === "AbortError") {
+        setError("Request timed out. Please try again.");
+      } else {
+        setError(err.message || "Something went wrong. Please try again.");
+      }
       setState("error");
     }
   };
