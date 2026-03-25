@@ -7,8 +7,7 @@ interface ResultData {
   bonusUrl: string;
 }
 
-const WEBHOOK_URL =
-  "https://aiaa1.datasciencemasterminds.com/webhook/1a4c03a8-4fd2-4b05-aa2b-6d7fd41e00f2/chat";
+const FUNCTION_URL = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/generate-ebook`;
 
 const TIMEOUT_MS = 120000;
 
