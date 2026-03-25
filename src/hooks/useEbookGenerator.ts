@@ -25,7 +25,7 @@ export function useEbookGenerator() {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
-      const response = await fetch(WEBHOOK_URL, {
+      const response = await fetch(FUNCTION_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ chatInput: kw }),
