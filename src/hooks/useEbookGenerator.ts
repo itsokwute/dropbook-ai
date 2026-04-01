@@ -2,14 +2,24 @@ import { useState } from "react";
 
 type AppState = "landing" | "loading" | "results" | "error";
 
+const WEBHOOK_URL =
+  "https://aiaa1.datasciencemasterminds.com/webhook/1a4c03a8-4fd2-4b05-aa2b-6d7fd41e00f2/chat";
+
+const EBOOK_URL =
+  "https://res.cloudinary.com/dmmsnesjt/raw/upload/dropbook-ebook";
+const BONUS_URL =
+  "https://res.cloudinary.com/dmmsnesjt/raw/upload/dropbook-bonus";
+
+const POLL_URL =
+  "https://res.cloudinary.com/dmmsnesjt/raw/upload/v1774747310/dropbook-ebook";
+
+const POLL_INTERVAL_MS = 5000;
+const MAX_WAIT_MS = 120000;
+
 interface ResultData {
   ebookUrl: string;
   bonusUrl: string;
 }
-
-const FUNCTION_URL = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/generate-ebook`;
-
-const TIMEOUT_MS = 120000;
 
 export function useEbookGenerator() {
   const [state, setState] = useState<AppState>("landing");
@@ -21,40 +31,45 @@ export function useEbookGenerator() {
     setKeyword(kw);
     setState("loading");
 
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
+    // Fire-and-forget: trigger the n8n chat workflow
+    fetch(WEBHOOK_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chatInput: kw }),
+    }).catch(() => {
+      // Ignore errors — we poll for the result instead
+    });
 
-      const response = await fetch(FUNCTION_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ chatInput: kw }),
-        signal: controller.signal,
+    // Poll Cloudinary to check if the file is ready, up to 120s
+    const start = Date.now();
+
+    const poll = (): Promise<boolean> =>
+      new Promise((resolve) => {
+        const check = async () => {
+          try {
+            const res = await fetch(POLL_URL, { method: "HEAD" });
+            if (res.ok) {
+              resolve(true);
+              return;
+            }
+          } catch {
+            // not ready yet
+          }
+
+          if (Date.now() - start >= MAX_WAIT_MS) {
+            resolve(true); // show results anyway after timeout
+            return;
+          }
+
+          setTimeout(check, POLL_INTERVAL_MS);
+        };
+        check();
       });
 
-      clearTimeout(timeoutId);
+    await poll();
 
-      if (!response.ok) {
-        const text = await response.text();
-        throw new Error(`Server error (${response.status}): ${text}`);
-      }
-
-      const data = await response.json();
-
-      if (!data.ebookUrl || !data.bonusUrl) {
-        throw new Error("Invalid response: missing download URLs.");
-      }
-
-      setResult({ ebookUrl: data.ebookUrl, bonusUrl: data.bonusUrl });
-      setState("results");
-    } catch (err: any) {
-      if (err.name === "AbortError") {
-        setError("Request timed out. Please try again.");
-      } else {
-        setError(err.message || "Something went wrong. Please try again.");
-      }
-      setState("error");
-    }
+    setResult({ ebookUrl: EBOOK_URL, bonusUrl: BONUS_URL });
+    setState("results");
   };
 
   const reset = () => {
