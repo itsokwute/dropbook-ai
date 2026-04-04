@@ -10,7 +10,7 @@ interface ResultsPageProps {
   onReset: () => void;
 }
 
-const ResultsPage = ({ ebookUrl, bonusUrl, onReset }: ResultsPageProps) => {
+const ResultsPage = ({ ebookUrl, bonusUrl, debugEbook, debugBonus, onReset }: ResultsPageProps) => {
   useEffect(() => {
     confetti({
       particleCount: 120,
