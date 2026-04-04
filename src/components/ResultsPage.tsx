@@ -65,13 +65,11 @@ const DownloadCard = ({
   icon,
   title,
   filename,
-  size,
   url,
 }: {
   icon: React.ReactNode;
   title: string;
   filename: string;
-  size: string;
   url: string;
 }) => (
   <div className="rounded-xl border border-border bg-card/60 p-6 space-y-4 text-left">
