@@ -38,14 +38,12 @@ const ResultsPage = ({ ebookUrl, bonusUrl, onReset }: ResultsPageProps) => {
             icon={<FileText className="h-6 w-6 text-primary" />}
             title="Main Ebook"
             filename="ebook.docx"
-            size="~2 MB"
             url={ebookUrl}
           />
           <DownloadCard
             icon={<Gift className="h-6 w-6 text-secondary" />}
             title="Bonus Package"
-            filename="bonus-pack.zip"
-            size="~5 MB"
+            filename="bonus.docx"
             url={bonusUrl}
           />
         </div>
