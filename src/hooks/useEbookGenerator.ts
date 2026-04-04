@@ -28,6 +28,8 @@ function base64ToBlob(base64: string): Blob {
 interface ResultData {
   ebookUrl: string;
   bonusUrl: string;
+  debugEbook: string;
+  debugBonus: string;
 }
 
 export function useEbookGenerator() {
