@@ -77,10 +77,7 @@ const DownloadCard = ({
       {icon}
       <h3 className="font-semibold text-foreground">{title}</h3>
     </div>
-    <div className="text-sm text-muted-foreground">
-      <p>{filename}</p>
-      <p>{size}</p>
-    </div>
+    <p className="text-sm text-muted-foreground">{filename}</p>
     <a
       href={url}
       target="_blank"
