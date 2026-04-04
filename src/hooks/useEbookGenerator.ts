@@ -28,6 +28,8 @@ function base64ToBlob(base64: string): Blob {
 interface ResultData {
   ebookUrl: string;
   bonusUrl: string;
+  debugEbook: string;
+  debugBonus: string;
 }
 
 export function useEbookGenerator() {
@@ -66,6 +68,11 @@ export function useEbookGenerator() {
       const ebookText = await ebookRes.text();
       const bonusText = await bonusRes.text();
 
+      console.log("EBOOK first 100 chars:", ebookText.substring(0, 100));
+      console.log("BONUS first 100 chars:", bonusText.substring(0, 100));
+      console.log("EBOOK length:", ebookText.length);
+      console.log("BONUS length:", bonusText.length);
+
       // 4. Convert to blobs
       const ebookBlob = base64ToBlob(ebookText);
       const bonusBlob = base64ToBlob(bonusText);
@@ -73,6 +80,8 @@ export function useEbookGenerator() {
       setResult({
         ebookUrl: URL.createObjectURL(ebookBlob),
         bonusUrl: URL.createObjectURL(bonusBlob),
+        debugEbook: `[len=${ebookText.length}] ${ebookText.substring(0, 100)}`,
+        debugBonus: `[len=${bonusText.length}] ${bonusText.substring(0, 100)}`,
       });
       setState("results");
     } catch (err: any) {

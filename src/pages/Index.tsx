@@ -15,6 +15,8 @@ const Index = () => {
         <ResultsPage
           ebookUrl={result.ebookUrl}
           bonusUrl={result.bonusUrl}
+          debugEbook={result.debugEbook}
+          debugBonus={result.debugBonus}
           onReset={reset}
         />
       )}

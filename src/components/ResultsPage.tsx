@@ -5,10 +5,12 @@ import confetti from "canvas-confetti";
 interface ResultsPageProps {
   ebookUrl: string;
   bonusUrl: string;
+  debugEbook?: string;
+  debugBonus?: string;
   onReset: () => void;
 }
 
-const ResultsPage = ({ ebookUrl, bonusUrl, onReset }: ResultsPageProps) => {
+const ResultsPage = ({ ebookUrl, bonusUrl, debugEbook, debugBonus, onReset }: ResultsPageProps) => {
   useEffect(() => {
     confetti({
       particleCount: 120,
@@ -56,6 +58,14 @@ const ResultsPage = ({ ebookUrl, bonusUrl, onReset }: ResultsPageProps) => {
           <ArrowLeft className="h-4 w-4" />
           Generate Another
         </button>
+
+        {(debugEbook || debugBonus) && (
+          <div className="animate-fade-up text-left rounded-lg border border-border bg-muted/50 p-4 space-y-2 text-xs font-mono text-muted-foreground overflow-x-auto" style={{ animationDelay: "360ms" }}>
+            <p className="font-semibold text-foreground/60">Debug: Raw Cloudinary response</p>
+            <p className="break-all"><span className="text-foreground/80">Ebook:</span> {debugEbook}</p>
+            <p className="break-all"><span className="text-foreground/80">Bonus:</span> {debugBonus}</p>
+          </div>
+        )}
       </div>
     </section>
   );
