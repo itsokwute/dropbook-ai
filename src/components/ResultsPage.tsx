@@ -80,8 +80,7 @@ const DownloadCard = ({
     <p className="text-sm text-muted-foreground">{filename}</p>
     <a
       href={url}
-      target="_blank"
-      rel="noopener noreferrer"
+      download={filename}
       className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-all hover:brightness-110 active:scale-[0.97] glow-primary-sm w-full justify-center"
     >
       <Download className="h-4 w-4" />
