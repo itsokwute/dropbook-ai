@@ -5,6 +5,8 @@ import confetti from "canvas-confetti";
 interface ResultsPageProps {
   ebookUrl: string;
   bonusUrl: string;
+  debugEbook?: string;
+  debugBonus?: string;
   onReset: () => void;
 }
 
