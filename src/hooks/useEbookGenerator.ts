@@ -8,8 +8,13 @@ const DOCX_MIME =
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 
 function base64ToBlobUrl(base64: string): string {
-  const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
-  const blob = new Blob([bytes], { type: DOCX_MIME });
+  const byteCharacters = atob(base64);
+  const byteNumbers = new Array(byteCharacters.length);
+  for (let i = 0; i < byteCharacters.length; i++) {
+    byteNumbers[i] = byteCharacters.charCodeAt(i);
+  }
+  const byteArray = new Uint8Array(byteNumbers);
+  const blob = new Blob([byteArray], { type: DOCX_MIME });
   return URL.createObjectURL(blob);
 }
 
