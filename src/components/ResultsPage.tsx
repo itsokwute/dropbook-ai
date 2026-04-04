@@ -38,14 +38,12 @@ const ResultsPage = ({ ebookUrl, bonusUrl, onReset }: ResultsPageProps) => {
             icon={<FileText className="h-6 w-6 text-primary" />}
             title="Main Ebook"
             filename="ebook.docx"
-            size="~2 MB"
             url={ebookUrl}
           />
           <DownloadCard
             icon={<Gift className="h-6 w-6 text-secondary" />}
             title="Bonus Package"
-            filename="bonus-pack.zip"
-            size="~5 MB"
+            filename="bonus.docx"
             url={bonusUrl}
           />
         </div>
@@ -67,13 +65,11 @@ const DownloadCard = ({
   icon,
   title,
   filename,
-  size,
   url,
 }: {
   icon: React.ReactNode;
   title: string;
   filename: string;
-  size: string;
   url: string;
 }) => (
   <div className="rounded-xl border border-border bg-card/60 p-6 space-y-4 text-left">
@@ -81,14 +77,10 @@ const DownloadCard = ({
       {icon}
       <h3 className="font-semibold text-foreground">{title}</h3>
     </div>
-    <div className="text-sm text-muted-foreground">
-      <p>{filename}</p>
-      <p>{size}</p>
-    </div>
+    <p className="text-sm text-muted-foreground">{filename}</p>
     <a
       href={url}
-      target="_blank"
-      rel="noopener noreferrer"
+      download={filename}
       className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-all hover:brightness-110 active:scale-[0.97] glow-primary-sm w-full justify-center"
     >
       <Download className="h-4 w-4" />

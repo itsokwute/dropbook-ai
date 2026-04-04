@@ -2,19 +2,16 @@ import { useState } from "react";
 
 type AppState = "landing" | "loading" | "results" | "error";
 
-const WEBHOOK_URL =
-  "https://aiaa1.datasciencemasterminds.com/webhook/1a4c03a8-4fd2-4b05-aa2b-6d7fd41e00f2/chat";
+const FUNCTION_URL = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/generate-ebook`;
 
-const EBOOK_URL =
-  "https://res.cloudinary.com/dmmsnesjt/raw/upload/dropbook-ebook";
-const BONUS_URL =
-  "https://res.cloudinary.com/dmmsnesjt/raw/upload/dropbook-bonus";
+const DOCX_MIME =
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 
-const POLL_URL =
-  "https://res.cloudinary.com/dmmsnesjt/raw/upload/v1774747310/dropbook-ebook";
-
-const POLL_INTERVAL_MS = 5000;
-const MAX_WAIT_MS = 120000;
+function base64ToBlobUrl(base64: string): string {
+  const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+  const blob = new Blob([bytes], { type: DOCX_MIME });
+  return URL.createObjectURL(blob);
+}
 
 interface ResultData {
   ebookUrl: string;
@@ -30,49 +27,51 @@ export function useEbookGenerator() {
   const generate = async (kw: string) => {
     setKeyword(kw);
     setState("loading");
+    setError("");
 
-    // Fire-and-forget: trigger the n8n chat workflow
-    fetch(WEBHOOK_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ chatInput: kw }),
-    }).catch(() => {
-      // Ignore errors — we poll for the result instead
-    });
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 120000);
 
-    // Poll Cloudinary to check if the file is ready, up to 120s
-    const start = Date.now();
-
-    const poll = (): Promise<boolean> =>
-      new Promise((resolve) => {
-        const check = async () => {
-          try {
-            const res = await fetch(POLL_URL, { method: "HEAD" });
-            if (res.ok) {
-              resolve(true);
-              return;
-            }
-          } catch {
-            // not ready yet
-          }
-
-          if (Date.now() - start >= MAX_WAIT_MS) {
-            resolve(true); // show results anyway after timeout
-            return;
-          }
-
-          setTimeout(check, POLL_INTERVAL_MS);
-        };
-        check();
+      const response = await fetch(FUNCTION_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({ chatInput: kw }),
+        signal: controller.signal,
       });
 
-    await poll();
+      clearTimeout(timeoutId);
 
-    setResult({ ebookUrl: EBOOK_URL, bonusUrl: BONUS_URL });
-    setState("results");
+      if (!response.ok) {
+        throw new Error("Generation failed");
+      }
+
+      const data = await response.json();
+
+      const ebookUrl = base64ToBlobUrl(data.ebookData);
+      const bonusUrl = base64ToBlobUrl(data.bonusData);
+
+      setResult({ ebookUrl, bonusUrl });
+      setState("results");
+    } catch (err: any) {
+      const message =
+        err.name === "AbortError"
+          ? "Request timed out. Please try again."
+          : err.message || "Something went wrong.";
+      setError(message);
+      setState("error");
+    }
   };
 
   const reset = () => {
+    // Revoke blob URLs to free memory
+    if (result) {
+      URL.revokeObjectURL(result.ebookUrl);
+      URL.revokeObjectURL(result.bonusUrl);
+    }
     setState("landing");
     setKeyword("");
     setResult(null);
