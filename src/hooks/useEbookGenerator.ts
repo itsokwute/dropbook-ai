@@ -2,20 +2,27 @@ import { useState } from "react";
 
 type AppState = "landing" | "loading" | "results" | "error";
 
-const FUNCTION_URL = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/generate-ebook`;
+const N8N_WEBHOOK_URL =
+  "https://aiaa1.datasciencemasterminds.com/webhook/1a4c03a8-4fd2-4b05-aa2b-6d7fd41e00f2/chat";
+
+const EBOOK_URL =
+  "https://res.cloudinary.com/dmmsnesjt/raw/upload/dropbook-ebook";
+const BONUS_URL =
+  "https://res.cloudinary.com/dmmsnesjt/raw/upload/dropbook-bonus";
 
 const DOCX_MIME =
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 
-function base64ToBlobUrl(base64: string): string {
-  const byteCharacters = atob(base64);
+const WAIT_MS = 110_000;
+
+function base64ToBlob(base64: string): Blob {
+  const byteCharacters = atob(base64.trim());
   const byteNumbers = new Array(byteCharacters.length);
   for (let i = 0; i < byteCharacters.length; i++) {
     byteNumbers[i] = byteCharacters.charCodeAt(i);
   }
   const byteArray = new Uint8Array(byteNumbers);
-  const blob = new Blob([byteArray], { type: DOCX_MIME });
-  return URL.createObjectURL(blob);
+  return new Blob([byteArray], { type: DOCX_MIME });
 }
 
 interface ResultData {
@@ -35,44 +42,46 @@ export function useEbookGenerator() {
     setError("");
 
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 120000);
-
-      const response = await fetch(FUNCTION_URL, {
+      // 1. Fire-and-forget POST to n8n (ignore CORS)
+      fetch(N8N_WEBHOOK_URL, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ chatInput: kw }),
-        signal: controller.signal,
-      });
+        mode: "no-cors",
+      }).catch(() => {});
 
-      clearTimeout(timeoutId);
+      // 2. Wait 110 seconds
+      await new Promise((resolve) => setTimeout(resolve, WAIT_MS));
 
-      if (!response.ok) {
-        throw new Error("Generation failed");
+      // 3. Fetch base64 data from Cloudinary
+      const [ebookRes, bonusRes] = await Promise.all([
+        fetch(EBOOK_URL),
+        fetch(BONUS_URL),
+      ]);
+
+      if (!ebookRes.ok || !bonusRes.ok) {
+        throw new Error("Failed to fetch ebook files.");
       }
 
-      const data = await response.json();
+      const ebookText = await ebookRes.text();
+      const bonusText = await bonusRes.text();
 
-      const ebookUrl = base64ToBlobUrl(data.ebookData);
-      const bonusUrl = base64ToBlobUrl(data.bonusData);
+      // 4. Convert to blobs
+      const ebookBlob = base64ToBlob(ebookText);
+      const bonusBlob = base64ToBlob(bonusText);
 
-      setResult({ ebookUrl, bonusUrl });
+      setResult({
+        ebookUrl: URL.createObjectURL(ebookBlob),
+        bonusUrl: URL.createObjectURL(bonusBlob),
+      });
       setState("results");
     } catch (err: any) {
-      const message =
-        err.name === "AbortError"
-          ? "Request timed out. Please try again."
-          : err.message || "Something went wrong.";
-      setError(message);
+      setError(err.message || "Something went wrong.");
       setState("error");
     }
   };
 
   const reset = () => {
-    // Revoke blob URLs to free memory
     if (result) {
       URL.revokeObjectURL(result.ebookUrl);
       URL.revokeObjectURL(result.bonusUrl);
