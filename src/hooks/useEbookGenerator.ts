@@ -15,21 +15,9 @@ const DOCX_MIME =
 
 const WAIT_MS = 110_000;
 
-function base64ToBlob(base64: string): Blob {
-  const byteCharacters = atob(base64.trim());
-  const byteNumbers = new Array(byteCharacters.length);
-  for (let i = 0; i < byteCharacters.length; i++) {
-    byteNumbers[i] = byteCharacters.charCodeAt(i);
-  }
-  const byteArray = new Uint8Array(byteNumbers);
-  return new Blob([byteArray], { type: DOCX_MIME });
-}
-
 interface ResultData {
   ebookUrl: string;
   bonusUrl: string;
-  debugEbook: string;
-  debugBonus: string;
 }
 
 export function useEbookGenerator() {
@@ -44,7 +32,6 @@ export function useEbookGenerator() {
     setError("");
 
     try {
-      // 1. Fire-and-forget POST to n8n (ignore CORS)
       fetch(N8N_WEBHOOK_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -52,10 +39,8 @@ export function useEbookGenerator() {
         mode: "no-cors",
       }).catch(() => {});
 
-      // 2. Wait 110 seconds
       await new Promise((resolve) => setTimeout(resolve, WAIT_MS));
 
-      // 3. Fetch base64 data from Cloudinary
       const [ebookRes, bonusRes] = await Promise.all([
         fetch(EBOOK_URL),
         fetch(BONUS_URL),
@@ -65,23 +50,17 @@ export function useEbookGenerator() {
         throw new Error("Failed to fetch ebook files.");
       }
 
-      const ebookText = await ebookRes.text();
-      const bonusText = await bonusRes.text();
+      const [ebookBuf, bonusBuf] = await Promise.all([
+        ebookRes.arrayBuffer(),
+        bonusRes.arrayBuffer(),
+      ]);
 
-      console.log("EBOOK first 100 chars:", ebookText.substring(0, 100));
-      console.log("BONUS first 100 chars:", bonusText.substring(0, 100));
-      console.log("EBOOK length:", ebookText.length);
-      console.log("BONUS length:", bonusText.length);
-
-      // 4. Convert to blobs
-      const ebookBlob = base64ToBlob(ebookText);
-      const bonusBlob = base64ToBlob(bonusText);
+      const ebookBlob = new Blob([ebookBuf], { type: DOCX_MIME });
+      const bonusBlob = new Blob([bonusBuf], { type: DOCX_MIME });
 
       setResult({
         ebookUrl: URL.createObjectURL(ebookBlob),
         bonusUrl: URL.createObjectURL(bonusBlob),
-        debugEbook: `[len=${ebookText.length}] ${ebookText.substring(0, 100)}`,
-        debugBonus: `[len=${bonusText.length}] ${bonusText.substring(0, 100)}`,
       });
       setState("results");
     } catch (err: any) {
