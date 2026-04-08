@@ -41,6 +41,8 @@ export function useEbookGenerator() {
       if (fnError) {
         throw new Error(fnError.message || "Edge function request failed.");
       }
+      const { ebookData, bonusData } = data;
+
       if (!ebookData || !bonusData) {
         throw new Error("Missing ebook or bonus data in response.");
       }
