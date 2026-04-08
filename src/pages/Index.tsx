@@ -5,7 +5,7 @@ import ErrorPage from "@/components/ErrorPage";
 import { useEbookGenerator } from "@/hooks/useEbookGenerator";
 
 const Index = () => {
-  const { state, result, error, generate, reset } = useEbookGenerator();
+  const { state, result, error, rawResponse, generate, reset } = useEbookGenerator();
 
   return (
     <div className="min-h-screen bg-background">
