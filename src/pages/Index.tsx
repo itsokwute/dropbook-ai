@@ -5,7 +5,7 @@ import ErrorPage from "@/components/ErrorPage";
 import { useEbookGenerator } from "@/hooks/useEbookGenerator";
 
 const Index = () => {
-  const { state, result, error, generate, reset } = useEbookGenerator();
+  const { state, result, error, rawResponse, generate, reset } = useEbookGenerator();
 
   return (
     <div className="min-h-screen bg-background">
@@ -18,7 +18,7 @@ const Index = () => {
           onReset={reset}
         />
       )}
-      {state === "error" && <ErrorPage message={error} onRetry={reset} />}
+      {state === "error" && <ErrorPage message={error} rawResponse={rawResponse} onRetry={reset} />}
 
       {/* Footer */}
       <footer className="fixed bottom-0 inset-x-0 py-4 text-center text-xs text-muted-foreground border-t border-border bg-background/80 backdrop-blur-sm">

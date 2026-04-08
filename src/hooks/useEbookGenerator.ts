@@ -26,11 +26,13 @@ export function useEbookGenerator() {
   const [keyword, setKeyword] = useState("");
   const [result, setResult] = useState<ResultData | null>(null);
   const [error, setError] = useState("");
+  const [rawResponse, setRawResponse] = useState("");
 
   const generate = async (kw: string) => {
     setKeyword(kw);
     setState("loading");
     setError("");
+    setRawResponse("");
 
     try {
       const { data, error: fnError } = await supabase.functions.invoke(
@@ -41,10 +43,16 @@ export function useEbookGenerator() {
       if (fnError) {
         throw new Error(fnError.message || "Edge function request failed.");
       }
+
+      if (data?.rawResponse) {
+        setRawResponse(typeof data.rawResponse === 'string' ? data.rawResponse : JSON.stringify(data.rawResponse, null, 2));
+      }
+
       const { ebookData, bonusData } = data;
 
       if (!ebookData || !bonusData) {
-        throw new Error("Missing ebook or bonus data in response.");
+        const msg = data?.error || "Missing ebook or bonus data in response.";
+        throw new Error(msg);
       }
 
       const ebookBlob = base64ToBlob(ebookData, DOCX_MIME);
@@ -70,7 +78,8 @@ export function useEbookGenerator() {
     setKeyword("");
     setResult(null);
     setError("");
+    setRawResponse("");
   };
 
-  return { state, keyword, result, error, generate, reset };
+  return { state, keyword, result, error, rawResponse, generate, reset };
 }

@@ -33,11 +33,60 @@ Deno.serve(async (req) => {
 
     clearTimeout(timeoutId);
 
-    const data = await response.json();
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("n8n webhook error:", response.status, errorText);
+      return new Response(JSON.stringify({ error: `n8n webhook failed: ${response.statusText}`, rawResponse: errorText }), {
+        status: response.status,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
-    return new Response(JSON.stringify(data), {
+    const rawText = await response.text();
+    console.log("Raw n8n response:", rawText);
+
+    let parsed: any;
+    try {
+      parsed = JSON.parse(rawText);
+    } catch {
+      console.error("Failed to parse n8n response as JSON");
+      return new Response(JSON.stringify({ error: 'Non-JSON response from n8n', rawResponse: rawText }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    let ebookData: string | null = null;
+    let bonusData: string | null = null;
+
+    // Try location 1: top-level
+    if (parsed.ebookData && parsed.bonusData) {
+      ebookData = parsed.ebookData;
+      bonusData = parsed.bonusData;
+    }
+    // Try location 2: array[0]
+    else if (Array.isArray(parsed) && parsed[0]?.ebookData && parsed[0]?.bonusData) {
+      ebookData = parsed[0].ebookData;
+      bonusData = parsed[0].bonusData;
+    }
+    // Try location 3: nested .data
+    else if (parsed.data?.ebookData && parsed.data?.bonusData) {
+      ebookData = parsed.data.ebookData;
+      bonusData = parsed.data.bonusData;
+    }
+
+    if (ebookData && bonusData) {
+      return new Response(JSON.stringify({ ebookData, bonusData }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    console.warn("ebookData/bonusData not found. Raw response:", rawText);
+    return new Response(JSON.stringify({ error: 'ebookData or bonusData not found in response', rawResponse: rawText }), {
+      status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
+
   } catch (err) {
     console.error('Error:', err);
     const status = err.name === 'AbortError' ? 504 : 500;
