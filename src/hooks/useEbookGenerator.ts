@@ -1,9 +1,7 @@
 import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 type AppState = "landing" | "loading" | "results" | "error";
-
-const WEBHOOK_URL =
-  "https://aiaa1.datasciencemasterminds.com/webhook/generate-ebook";
 
 const DOCX_MIME =
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
@@ -35,17 +33,14 @@ export function useEbookGenerator() {
     setError("");
 
     try {
-      const response = await fetch(WEBHOOK_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ chatInput: kw }),
-      });
+      const { data, error: fnError } = await supabase.functions.invoke(
+        "generate-ebook",
+        { body: { chatInput: kw } }
+      );
 
-      if (!response.ok) {
-        throw new Error("Webhook request failed.");
+      if (fnError) {
+        throw new Error(fnError.message || "Edge function request failed.");
       }
-
-      const data = await response.json();
       const { ebookData, bonusData } = data;
 
       if (!ebookData || !bonusData) {
