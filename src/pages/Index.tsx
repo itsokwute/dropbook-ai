@@ -18,7 +18,7 @@ const Index = () => {
           onReset={reset}
         />
       )}
-      {state === "error" && <ErrorPage message={error} onRetry={reset} />}
+      {state === "error" && <ErrorPage message={error} rawResponse={rawResponse} onRetry={reset} />}
 
       {/* Footer */}
       <footer className="fixed bottom-0 inset-x-0 py-4 text-center text-xs text-muted-foreground border-t border-border bg-background/80 backdrop-blur-sm">
