@@ -1,9 +1,7 @@
 import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 type AppState = "landing" | "loading" | "results" | "error";
-
-const WEBHOOK_URL =
-  "https://aiaa1.datasciencemasterminds.com/webhook/generate-ebook";
 
 const DOCX_MIME =
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
