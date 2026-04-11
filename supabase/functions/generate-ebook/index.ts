@@ -59,22 +59,35 @@ Deno.serve(async (req) => {
     let ebookData: string | null = null;
     let bonusData: string | null = null;
 
-    // Try location 1: top-level
+    // Location 1: top-level keys
     if (parsed.ebookData && parsed.bonusData) {
       ebookData = parsed.ebookData;
       bonusData = parsed.bonusData;
     }
-    // Try location 2: array[0]
+    // Location 2: array wrapper
     else if (Array.isArray(parsed) && parsed[0]?.ebookData && parsed[0]?.bonusData) {
       ebookData = parsed[0].ebookData;
       bonusData = parsed[0].bonusData;
     }
-    // Try location 3: nested .data
+    // Location 3: nested .data
     else if (parsed.data?.ebookData && parsed.data?.bonusData) {
       ebookData = parsed.data.ebookData;
       bonusData = parsed.data.bonusData;
     }
-
+    // Location 4: ConvertAPI Files[0].FileData structure
+    else if (Array.isArray(parsed) && parsed[0]?.Files?.[0]?.FileData && parsed[1]?.Files?.[0]?.FileData) {
+      ebookData = parsed[0].Files[0].FileData;
+      bonusData = parsed[1].Files[0].FileData;
+    }
+    // Location 5: single object with Files array (ebook + bonus as two entries)
+    else if (parsed.Files?.[0]?.FileData) {
+      ebookData = parsed.Files[0].FileData;
+      bonusData = parsed.Files[0].FileData;
+    }
+// Strip data-URI prefix if present
+    const stripPrefix = (s: string) => s.includes(',') && s.startsWith('data:') ? s.split(',')[1] : s;
+    if (ebookData) ebookData = stripPrefix(ebookData);
+    if (bonusData) bonusData = stripPrefix(bonusData);
     if (ebookData && bonusData) {
       return new Response(JSON.stringify({ ebookData, bonusData }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
